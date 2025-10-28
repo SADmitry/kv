@@ -184,6 +184,7 @@ src/main/java/kv/
   SegmentWriter.java           # append‑only writer for one segment
   Record.java                  # record format + serializer
   Position.java                # immutable logical address (segmentId, offset)
+  lsm/                         # LSM implementation for big memory consumption
 ```
 
 ## Limitations & Future Work
@@ -200,7 +201,3 @@ src/main/java/kv/
 * **JDK httpserver** keeps the stack dependency‑free and is sufficient for an assignment‑scale service.
 * **Virtual threads** make concurrency simple without reactive frameworks.
 * **SkipList** gives range scans «for free» with minimal extra complexity.
-
----
-
-*© 2025 — Take‑home reference implementation for a Principal Engineer assignment.*
