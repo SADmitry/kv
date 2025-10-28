@@ -1,12 +1,11 @@
 # KV — a networked, persistent key–value store (Java 21)
 
-A compact take‑home implementation of a Bitcask‑style append‑only KV store with a tiny HTTP API, built on **Java 21** (standard library only). Targets **Amazon Corretto 21**. No third‑party dependencies.
+A compact take‑home implementation of a Bitcask‑style append‑only KV store with a tiny HTTP API, built on Java 21 (standard library only). No third‑party dependencies.
 
 ---
 
 ## Table of Contents
 
-* [Goals](#goals)
 * [Features](#features)
 * [Design Overview](#design-overview)
 * [On‑disk Format](#on-disk-format)
@@ -23,12 +22,6 @@ A compact take‑home implementation of a Bitcask‑style append‑only KV store
 * [Why These Choices](#why-these-choices)
 
 ---
-
-## Goals
-
-* Deliver a **reliable**, **understandable** KV store suitable for a take‑home assignment.
-* Use **only JDK** (no frameworks). Keep the surface area small.
-* Optimize for correctness and clarity; leave well‑scoped hooks for growth.
 
 ## Features
 
@@ -110,16 +103,6 @@ curl -s 'http://localhost:8080/range?start=a&end=z' | jq -r '.k+"\t"+(.v|@base64
 ./gradlew clean build
 ./gradlew run --args="--data ./data --port 8080 --segment-bytes 134217728 --fsync-interval-ms 20"
 ```
-
-### Run the Jar directly
-
-```bash
-java --add-modules=jdk.httpserver -jar build/libs/moniepoint-kv-*.jar --data ./data --port 8080
-```
-
-### Amazon Corretto 21
-
-Works out of the box (contains `jdk.httpserver`). No extra flags besides `--add-modules=jdk.httpserver` when running the jar.
 
 ## Quick Start (cURL)
 
