@@ -46,12 +46,4 @@ public record Position(long segmentId, long offset) implements Comparable<Positi
         int bySeg = Long.compare(this.segmentId, other.segmentId);
         return (bySeg != 0) ? bySeg : Long.compare(this.offset, other.offset);
     }
-
-    /**
-     * Convenience helper to create a new position within the same segment, at a different offset.
-     * Useful when iterating records inside the same segment.
-     */
-    public Position withOffset(long newOffset) {
-        return new Position(this.segmentId, newOffset);
-    }
 }

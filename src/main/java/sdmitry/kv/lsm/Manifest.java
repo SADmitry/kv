@@ -1,7 +1,6 @@
 package sdmitry.kv.lsm;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -25,11 +24,11 @@ public class Manifest implements AutoCloseable {
             List<String> lines = Files.readAllLines(m.file, StandardCharsets.UTF_8);
             for (String s : lines) if (!s.isBlank()) m.newestFirst.add(dir.resolve(s.trim()));
         } else {
-// best-effort scan
+            // best-effort scan
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir, "*.sst")) {
                 for (Path p : ds) m.newestFirst.add(p);
             }
-// do not sort strictly; we keep discovery order
+            // do not sort strictly; we keep discovery order
             m.storeAtomic();
         }
         m.reopenReaders();

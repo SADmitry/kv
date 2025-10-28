@@ -130,13 +130,4 @@ public class Record {
     public int crc() {
         return crc;
     }
-
-    // Convenience helpers when code works with String keys/values.
-    public static Record normalUtf8(String key, byte[] value) {
-        return normal(key.getBytes(StandardCharsets.UTF_8), value);
-    }
-
-    public static Record tombstoneUtf8(String key) {
-        return tombstone(key.getBytes(StandardCharsets.UTF_8));
-    }
 }

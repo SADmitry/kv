@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
-import java.util.function.BiConsumer;
 import java.util.zip.CRC32;
 
 public class Wal implements AutoCloseable {
@@ -42,7 +41,7 @@ public class Wal implements AutoCloseable {
         ByteBuffer buf = ByteBuffer.allocate(4 + 4 + 1 + 4 + 4 + kb.length + value.length);
         buf.putInt(0x57414C31).putInt(crc).put(op).putInt(kb.length).putInt(value.length).put(kb).put(value).flip();
         ch.write(buf);
-// caller decides when to fsync (we keep it simple here)
+        // caller decides when to fsync (we keep it simple here)
     }
 
     void replay(Replay consumer) throws IOException {
@@ -86,7 +85,7 @@ public class Wal implements AutoCloseable {
     }
 
     void rotate() throws IOException {
-// Close and atomically rename current WAL to a timestamped file; start new one
+        // Close and atomically rename current WAL to a timestamped file; start new one
         ch.force(true);
         ch.close();
         String stamp = String.valueOf(System.currentTimeMillis());
@@ -96,7 +95,7 @@ public class Wal implements AutoCloseable {
         } catch (AtomicMoveNotSupportedException e) {
             Files.move(active, rotated);
         }
-// fsync dir for durability
+        // fsync dir for durability
         try (var dirCh = FileChannel.open(active.getParent(), StandardOpenOption.READ)) {
             dirCh.force(true);
         }

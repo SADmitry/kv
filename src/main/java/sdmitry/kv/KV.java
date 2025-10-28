@@ -1,16 +1,21 @@
 package sdmitry.kv;
 
-import java.io.*;
-
-import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 
-import java.net.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.zip.CRC32;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  KV — a network-available persistent Key/Value store using only Java stdlib (Java 21)
@@ -213,13 +218,5 @@ public class KV {
         try (OutputStream os = ex.getResponseBody()) {
             os.write(b);
         }
-    }
-
-    static int crc32(byte tomb, byte[] key, byte[] value) {
-        CRC32 crc = new CRC32();
-        crc.update(tomb);
-        crc.update(key);
-        crc.update(value);
-        return (int) crc.getValue();
     }
 }

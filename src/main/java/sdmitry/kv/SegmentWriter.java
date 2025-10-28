@@ -61,7 +61,6 @@ public final class SegmentWriter implements AutoCloseable {
     /** Current file size in bytes (may increase after each append). */
     public long size() { return size.get(); }
 
-    /** Max size hint configured for rotation (not enforced here). */
     public long maxBytes() { return maxBytes; }
 
     /**
