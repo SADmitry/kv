@@ -173,51 +173,64 @@ public final class BitcaskStorageEngine implements AutoCloseable, KeyValueStore 
 
     /**
      * Compact live set into a fresh segment and delete obsolete segment files.
-     * <p>Algorithm:
-     * <ol>
-     *   <li>Snapshot the current index entries (key, Position).</li>
-     *   <li>Write each live entry as a fresh record into a new segment.</li>
-     *   <li>Swap the active writer to the new segment.</li>
-     *   <li>Delete all older segments (best-effort), return reclaimed byte count.</li>
-     * </ol>
-     * Note: this is a simple stop-the-world compaction of writers (reads continue via new channels).
+     * Algorithm:
+     *  - Snapshot the current index entries (key, Position).</li>
+     *  - Write each live entry as a fresh record into a new segment.</li>
+     *  - Swap the active writer to the new segment.</li>
+     *  - Delete all older segments (best-effort), return reclaimed byte count.</li>
      */
     @Override
     public long compact() throws IOException {
-        // Snapshot the live keys to avoid concurrent modification during iteration
+        // Snapshot
         List<Map.Entry<String, Position>> snapshot = new ArrayList<>(index.entrySet());
 
+        // Readying new seg
         SegmentWriter newSeg = new SegmentWriter(dir, nextSegmentId++, maxSegmentBytes);
+        ConcurrentSkipListMap<String, Position> newIndex = new ConcurrentSkipListMap<>();
+
+        // Rewrite
         for (var e : snapshot) {
             byte[] val = readAt(e.getValue());
-            if (val == null) continue; // may have been deleted in between
-            newSeg.append(Record.normal(e.getKey().getBytes(StandardCharsets.UTF_8), val));
+            if (val == null) continue;
+            Position p = newSeg.append(Record.normal(e.getKey().getBytes(StandardCharsets.UTF_8), val));
+            newIndex.put(e.getKey(), p);
         }
         newSeg.fsync();
 
-        // Swap active writer
-        SegmentWriter old;
+        // Atomically publish
+        List<Path> toDelete = new ArrayList<>();
         synchronized (rotateLock) {
-            old = active;
+            SegmentWriter old = active;
             active = newSeg;
-        }
-        if (old != null) old.close();
 
-        // Delete all non-active segments
-        long reclaimed = 0;
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir, "*.seg")) {
-            for (Path p : ds) {
-                // keep only the active segment
-                if (!p.getFileName().toString().startsWith(String.format("%020d", active.id()))) {
-                    try {
-                        reclaimed += Files.size(p);
-                        Files.deleteIfExists(p);
-                    } catch (IOException ignore) { /* best-effort cleanup */ }
+            // Save all seg's
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir, "*.seg")) {
+                String keepPrefix = String.format("%020d", active.id());
+                for (Path p : ds) {
+                    if (!p.getFileName().toString().startsWith(keepPrefix)) {
+                        toDelete.add(p);
+                    }
                 }
             }
+
+            // Reset index
+            index.clear();
+            index.putAll(newIndex);
+
+            if (old != null) old.close();
+        }
+
+        // Delete old segments
+        long reclaimed = 0;
+        for (Path p : toDelete) {
+            try {
+                reclaimed += Files.size(p);
+                Files.deleteIfExists(p);
+            } catch (IOException ignore) { /* best-effort */ }
         }
         return reclaimed;
     }
+
 
     /** Close active resources and stop background tasks. */
     @Override
