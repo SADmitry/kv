@@ -179,11 +179,11 @@ curl -X POST 'http://localhost:8080/compact'
 
 ```
 src/main/java/kv/
-  KV.java     # HTTP server (CLI, endpoints), wiring
-  StorageEngine.java    # engine: segments, index, recovery, compaction
-  SegmentWriter.java    # append‑only writer for one segment
-  Record.java           # record format + serializer
-  Position.java         # immutable logical address (segmentId, offset)
+  KV.java                      # HTTP server (CLI, endpoints), wiring
+  BitcaskStorageEngine.java    # engine: segments, index, recovery, compaction
+  SegmentWriter.java           # append‑only writer for one segment
+  Record.java                  # record format + serializer
+  Position.java                # immutable logical address (segmentId, offset)
 ```
 
 ## Limitations & Future Work
