@@ -6,14 +6,10 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.zip.CRC32;
 
 /**
@@ -52,7 +48,7 @@ public class KV {
 
         Files.createDirectories(dataDir);
 
-        StorageEngine engine = new StorageEngine(dataDir, segmentBytes, fsyncIntervalMs);
+        BitcaskStorageEngine engine = new BitcaskStorageEngine(dataDir, segmentBytes, fsyncIntervalMs);
         engine.start();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 1024);

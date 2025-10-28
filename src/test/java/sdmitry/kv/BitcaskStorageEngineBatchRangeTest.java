@@ -9,10 +9,10 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class StorageEngineBatchRangeTest {
+public class BitcaskStorageEngineBatchRangeTest {
     @Test
     void batchPutThenRangeReadsLexicographically(@TempDir Path dir) throws Exception {
-        try (StorageEngine eng = new StorageEngine(dir, 4 * 1024 * 1024, 0)) {
+        try (BitcaskStorageEngine eng = new BitcaskStorageEngine(dir, 4 * 1024 * 1024, 0)) {
             eng.start();
             int written = eng.batchPut(List.of(
                     Map.entry("a", "b".getBytes()),

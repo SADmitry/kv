@@ -7,10 +7,10 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class StorageEngineDeleteTest {
+public class BitcaskStorageEngineDeleteTest {
     @Test
     void deleteRemovesKey(@TempDir Path dir) throws Exception {
-        try (StorageEngine eng = new StorageEngine(dir, 4 * 1024 * 1024, 0)) {
+        try (BitcaskStorageEngine eng = new BitcaskStorageEngine(dir, 4 * 1024 * 1024, 0)) {
             eng.start();
             eng.put("k", "v".getBytes());
             eng.delete("k");

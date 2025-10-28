@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  *   - append-only keeps write path sequential and simple; index stores only Positions;
  *   - format details live in Record; files are named %020d.seg.
  */
-public final class StorageEngine implements AutoCloseable {
+public final class BitcaskStorageEngine implements AutoCloseable, KeyValueStore {
 
     private final Path dir;
     private final long maxSegmentBytes;
@@ -61,13 +61,14 @@ public final class StorageEngine implements AutoCloseable {
      * @param maxSegmentBytes  rotation threshold (soft limit) per segment
      * @param fsyncIntervalMs  group-commit fsync period; set to 0 to disable scheduled fsync
      */
-    public StorageEngine(Path dir, long maxSegmentBytes, long fsyncIntervalMs) {
+    public BitcaskStorageEngine(Path dir, long maxSegmentBytes, long fsyncIntervalMs) {
         this.dir = Objects.requireNonNull(dir, "dir");
         this.maxSegmentBytes = maxSegmentBytes;
         this.fsyncIntervalMs = fsyncIntervalMs;
     }
 
     /** Initialize the engine: discover segments, rebuild index, open an active writer, start fsync scheduler. */
+    @Override
     public void start() throws IOException {
         Files.createDirectories(dir);
 
@@ -105,6 +106,7 @@ public final class StorageEngine implements AutoCloseable {
      * PUT a single key/value.
      * <p>Updates the in-memory index after a successful append.</p>
      */
+    @Override
     public void put(String key, byte[] value) throws IOException {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(value, "value");
@@ -120,6 +122,7 @@ public final class StorageEngine implements AutoCloseable {
      *
      * @return number of written entries
      */
+    @Override
     public int batchPut(List<Map.Entry<String, byte[]>> items) throws IOException {
         if (items == null || items.isEmpty()) return 0;
         List<Record> rs = new ArrayList<>(items.size());
@@ -135,6 +138,7 @@ public final class StorageEngine implements AutoCloseable {
     }
 
     /** GET the latest value for a key, or {@code null} if absent or tombstoned. */
+    @Override
     public byte[] read(String key) throws IOException {
         Position pos = index.get(key);
         return (pos == null) ? null : readAt(pos);
@@ -144,6 +148,7 @@ public final class StorageEngine implements AutoCloseable {
      * Lexicographic range scan (inclusive).
      * <p>Returns up to {@code limit} live entries ordered by key.</p>
      */
+    @Override
     public List<Map.Entry<String, byte[]>> readKeyRange(String startInclusive, String endInclusive, int limit) throws IOException {
         List<Map.Entry<String, byte[]>> out = new ArrayList<>();
         for (var e : index.subMap(startInclusive, true, endInclusive, true).entrySet()) {
@@ -157,6 +162,7 @@ public final class StorageEngine implements AutoCloseable {
     }
 
     /** DELETE a key via a tombstone and evict it from the in-memory index. */
+    @Override
     public void delete(String key) throws IOException {
         Objects.requireNonNull(key, "key");
         Record r = Record.tombstone(key.getBytes(StandardCharsets.UTF_8));
@@ -176,6 +182,7 @@ public final class StorageEngine implements AutoCloseable {
      * </ol>
      * Note: this is a simple stop-the-world compaction of writers (reads continue via new channels).
      */
+    @Override
     public long compact() throws IOException {
         // Snapshot the live keys to avoid concurrent modification during iteration
         List<Map.Entry<String, Position>> snapshot = new ArrayList<>(index.entrySet());
