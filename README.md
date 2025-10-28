@@ -1,6 +1,6 @@
-# MoniepointKV — a networked, persistent key–value store (Java 21)
+# KV — a networked, persistent key–value store (Java 21)
 
-A compact take‑home implementation of a Bitcask‑style append‑only KV store with a tiny HTTP API, built on **Java 21** (standard library only). Targets **Amazon Corretto 21**. No third‑party dependencies.
+A compact take‑home implementation of a Bitcask‑style append‑only KV store with a tiny HTTP API, built on **Java 21** (standard library only). Targets **Amazon Corretto 21**. No third‑party dependencies.
 
 ---
 
@@ -39,7 +39,7 @@ A compact take‑home implementation of a Bitcask‑style append‑only KV store
 * **Periodic fsync** (group commit) — configurable interval
 * **Index rebuild** on startup (Bitcask‑style)
 * **Manual compaction** endpoint to reclaim dead entries
-* **Virtual threads** (Java 21) for simple, scalable request handling
+* **Virtual threads** (Java 21) for simple, scalable request handling
 
 > No external dependencies; HTTP served via `jdk.httpserver` from the JDK.
 
@@ -117,7 +117,7 @@ curl -s 'http://localhost:8080/range?start=a&end=z' | jq -r '.k+"\t"+(.v|@base64
 java --add-modules=jdk.httpserver -jar build/libs/moniepoint-kv-*.jar --data ./data --port 8080
 ```
 
-### Amazon Corretto 21
+### Amazon Corretto 21
 
 Works out of the box (contains `jdk.httpserver`). No extra flags besides `--add-modules=jdk.httpserver` when running the jar.
 
