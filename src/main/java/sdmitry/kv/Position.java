@@ -3,34 +3,21 @@ package sdmitry.kv;
 import java.util.Objects;
 
 /**
- * Immutable logical address of a record inside an append-only log segment.
+ * Logical address of a record inside an append-only segment.
  *
- * <p>A {@code Position} identifies a record by:
- * <ul>
- *   <li>{@code segmentId} – monotonically increasing identifier of the segment file
- *       (e.g. used in filename {@code %020d.seg});</li>
- *   <li>{@code offset} – byte offset from the beginning of that segment where the record header starts.</li>
- * </ul>
+ * Fields:
+ *   - segmentId : monotonically increasing id (used in file name %020d.seg)
+ *   - offset    : byte offset from the beginning of that segment (header start)
  *
- * <h2>Why a dedicated type</h2>
- * <ul>
- *   <li><strong>Clarity &amp; safety:</strong> separates the notion of “where on disk” from the higher-level
- *       engine logic. Passing a single value object is less error-prone than juggling two longs.</li>
- *   <li><strong>Immutability:</strong> positions must be stable once published to the in-memory index;
- *       a record type guarantees that.</li>
- *   <li><strong>Ordering:</strong> {@link Comparable} allows natural ordering (segment, then offset) useful for
- *       debugging, scans, or future compaction heuristics.</li>
- * </ul>
+ * Why a separate type:
+ *   - Clear API: pass one value-object instead of juggling two longs.
+ *   - Immutable: safe to publish into the in-memory index.
+ *   - Comparable: natural order by (segmentId, offset) helps scans/debugging.
  *
- * <h2>Design notes</h2>
- * <ul>
- *   <li>Position is <em>opaque</em> to callers; it is not validated against actual file size on creation
- *       (validation belongs to readers).</li>
- *   <li>No serialization is provided here on purpose: the in-memory index is rebuilt on startup by scanning
- *       segments, so we avoid persisting Position structures.</li>
- *   <li>Using a Java <em>record</em> (Java 21) gives value-semantics, generated {@code equals/hashCode/toString},
- *       and keeps the type lightweight.</li>
- * </ul>
+ * Notes:
+ *   - We don’t validate against file size here — readers do that.
+ *   - No serialization persisted: index is rebuilt on startup by scanning segments.
+ *   - Implemented as a Java record for lightweight value semantics.
  */
 public record Position(long segmentId, long offset) implements Comparable<Position> {
 

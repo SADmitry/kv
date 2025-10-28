@@ -20,34 +20,27 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Storage engine for an append-only, Bitcask-style key-value store.
+ * Storage engine for a Bitcask-style, append-only KV.
  *
- * <h2>Responsibilities</h2>
- * <ul>
- *   <li>Maintain an in-memory index {@code key -> Position} backed by append-only on-disk segments.</li>
- *   <li>Crash-friendly recovery by scanning segments and rebuilding the index (CRC-guarded records).</li>
- *   <li>Segment rotation by size and periodic {@code fsync()} for durability (group commit).</li>
- *   <li>Range reads via {@link ConcurrentSkipListMap#subMap(Object, boolean, Object, boolean)}.</li>
- *   <li>Optional compaction that rewrites live entries into a fresh segment and removes stale files.</li>
- * </ul>
+ * Does:
+ *   - keep an in-memory index: key -> Position;
+ *   - append records to segment files and rotate by size;
+ *   - rebuild the index on startup by scanning segments (CRC-guarded);
+ *   - serve range reads via ConcurrentSkipListMap.subMap();
+ *   - compact on demand (rewrite live set into a fresh segment).
  *
- * <h2>Design notes</h2>
- * <ul>
- *   <li><b>Append-only</b> log keeps writes sequential and simple; the index only stores positions.</li>
- *   <li><b>CRC32</b> at the record header allows recovery to stop at the first torn/partial tail safely.</li>
- *   <li><b>SkipList</b> index offers O(logN) point lookups and efficient lexicographic range scans.</li>
- *   <li><b>Virtual threads friendly</b>: public methods are short, blocking I/O is fine, and internal synchronization
- *       is coarse per segment writer for correctness.</li>
- * </ul>
+ * Concurrency:
+ *   - index is concurrent; writes go through a single SegmentWriter (synchronized);
+ *   - rotation swaps the active writer under a lock;
+ *   - readers open their own read-only channels (no sharing with the writer).
  *
- * <h2>Concurrency</h2>
- * <ul>
- *   <li>Index is a concurrent map. Writes append to the active segment (serialized within {@link SegmentWriter}).</li>
- *   <li>Rotation swaps a writer under a lock; readers always open their own read-only channels.</li>
- * </ul>
+ * Durability:
+ *   - periodic fsync() (group commit) balances latency and throughput;
+ *   - CRC at record header lets recovery stop cleanly at a torn tail.
  *
- * <h2>Wire format (per record)</h2>
- * See {@link Record} Javadoc. All segments are named {@code %020d.seg}.
+ * Notes:
+ *   - append-only keeps write path sequential and simple; index stores only Positions;
+ *   - format details live in Record; files are named %020d.seg.
  */
 public final class StorageEngine implements AutoCloseable {
 

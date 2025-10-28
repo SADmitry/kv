@@ -10,35 +10,26 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Append-only segment writer.
+ * Append-only writer for a single segment file (%020d.seg).
  *
- * <h2>Responsibilities</h2>
- * <ul>
- *   <li>Create/append to a single on-disk segment file named {@code %020d.seg}.</li>
- *   <li>Provide atomic appends of {@link Record} instances and return their {@link Position}.</li>
- *   <li>Expose size for rotation policies and allow explicit {@link #fsync()}.</li>
- * </ul>
+ * Does:
+ *   - open/create a segment and append records;
+ *   - return per-record Position;
+ *   - expose current size (useful for rotation);
+ *   - allow explicit fsync().
  *
- * <h2>Thread-safety model</h2>
- * <ul>
- *   <li>Writes are <b>serialized</b> per segment via {@code synchronized} methods. This keeps the code simple and
- *       safe for concurrent callers (e.g., many virtual threads) while preserving write order.</li>
- *   <li>We track the current file byte size with an {@link AtomicLong}; appends compute the starting offset from it.</li>
- *   <li>Read paths should open a <em>new</em> {@link FileChannel} (read-only) as needed; this class is write-only.</li>
- * </ul>
+ * Concurrency:
+ *   - methods that write are synchronized → one writer per segment, order is preserved;
+ *   - size is tracked with an AtomicLong to compute starting offsets;
+ *   - readers should open their own read-only FileChannel — this class is write-only.
  *
- * <h2>Durability</h2>
- * <ul>
- *   <li>{@link #fsync()} calls {@link FileChannel#force(boolean)} with {@code true} to persist data and metadata.
- *       The engine typically runs fsync on a schedule (group commit) for throughput/latency balance.</li>
- *   <li>Records are framed and CRC-protected; on crash, recovery scans until a corrupt/incomplete tail is found.</li>
- * </ul>
+ * Durability:
+ *   - fsync() calls FileChannel.force(true) (data+metadata); usually done on a schedule (group commit);
+ *   - records are framed+CRC’d; after a crash recovery scans until a torn tail and stops cleanly.
  *
- * <h2>Why a dedicated class</h2>
- * <ul>
- *   <li>Separates low-level I/O and file naming from engine/index logic (SRP).</li>
- *   <li>Encapsulates ordering guarantees and offset math, avoiding duplication and bugs (e.g., mixed offsets in batches).</li>
- * </ul>
+ * Why a separate class:
+ *   - keeps low-level I/O and naming away from engine logic;
+ *   - centralizes offset math/order guarantees (avoids batch-offset bugs).
  */
 public final class SegmentWriter implements AutoCloseable {
     private final long id;

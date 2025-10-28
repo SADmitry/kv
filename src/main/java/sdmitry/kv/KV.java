@@ -1,35 +1,5 @@
 package sdmitry.kv;
 
-/*
- MoniepointKV — a network-available persistent Key/Value store using only Java stdlib (Java 21)
-
- Features
- - PUT/GET/DELETE, Batch PUT, range reads
- - Append-only, Bitcask-style storage with log segments (CRC32 + length framing)
- - Crash-friendly recovery by index rebuild from segments
- - Periodic fsync and group commit (configurable)
- - Concurrent reads/writes using virtual threads
- - Range reads via ConcurrentSkipListMap index
- - Optional compaction endpoint to reclaim stale entries
-
- Build & Run
-   javac MoniepointKV.java && java MoniepointKV \
-       --data ./data --port 8080 --segment-bytes 134217728 --fsync-interval-ms 20
-
- cURL quick test
-   curl -X PUT 'http://localhost:8080/kv?key=foo' --data-raw 'bar'
-   curl -s 'http://localhost:8080/kv?key=foo'
-   curl -X POST 'http://localhost:8080/batch' --data-binary $'a\tb\nfoo\tBAR2'
-   curl -s 'http://localhost:8080/range?start=a&end=g'
-   curl -X DELETE 'http://localhost:8080/kv?key=foo'
-   curl -X POST 'http://localhost:8080/compact'
-
- Notes
- - Keys and values are UTF‑8 bytes; no size limit except segment limits
- - Only JDK classes are used (no third-party libs)
- - This is a compact, production‑style reference; further hardening noted in TODOs
-*/
-
 import java.io.*;
 
 import com.sun.net.httpserver.HttpServer;
@@ -46,9 +16,33 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.zip.CRC32;
 
+/**
+ KV — a network-available persistent Key/Value store using only Java stdlib (Java 21)
+
+ Features
+ - PUT/GET/DELETE, Batch PUT, range reads
+ - Append-only, Bitcask-style storage with log segments (CRC32 + length framing)
+ - Crash-friendly recovery by index rebuild from segments
+ - Periodic fsync and group commit (configurable)
+ - Concurrent reads/writes using virtual threads
+ - Range reads via ConcurrentSkipListMap index
+ - Optional compaction endpoint to reclaim stale entries
+
+ cURL quick test
+   curl -X PUT 'http://localhost:8080/kv?key=foo' --data-raw 'bar'
+   curl -s 'http://localhost:8080/kv?key=foo'
+   curl -X POST 'http://localhost:8080/batch' --data-binary $'a\tb\nfoo\tBAR2'
+   curl -s 'http://localhost:8080/range?start=a&end=g'
+   curl -X DELETE 'http://localhost:8080/kv?key=foo'
+   curl -X POST 'http://localhost:8080/compact'
+
+ Notes
+ - Keys and values are UTF‑8 bytes; no size limit except segment limits
+ - Only JDK classes are used (no third-party libs)
+ - This is a compact, production‑style reference; further hardening noted in TODOs
+*/
 public class KV {
 
-    // ======== CLI ========
     public static void main(String[] args) throws Exception {
         Map<String, String> cli = parseArgs(args);
         Path dataDir = Paths.get(cli.getOrDefault("--data", "./data"));
@@ -159,7 +153,7 @@ public class KV {
         });
 
         server.start();
-        System.out.println("MoniepointKV listening on http://localhost:" + port);
+        System.out.println("KV listening on http://localhost:" + port);
     }
 
     static Map<String, String> parseArgs(String[] args) {
